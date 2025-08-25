@@ -2,7 +2,8 @@ import customtkinter as ctk
 from PIL import Image
 from type_effectiveness_matrix import generateTypeEffects
 from type_effectiveness_matrix import State
-from type_effectiveness_matrix import generateTypeEffectsBalance
+from type_effectiveness_matrix import generateTypeEffectsBalanceD
+from type_effectiveness_matrix import generateTypeEffectsBalanceO
 import numpy as np
 
 ctk.set_appearance_mode("dark")
@@ -28,7 +29,8 @@ balance = State() #specifies whether or not the application is in balance mode
 
 # type matrixes
 matrix, type_effects = generateTypeEffects()
-balance_matrix, balance_type_effects = generateTypeEffectsBalance()
+balance_matrix, balance_type_effects = generateTypeEffectsBalanceD()
+coverage_matrix, coverage_type_effects = generateTypeEffectsBalanceO()
 
 # instantiate ctk image objects and make the west anchored objects
 for i, t in enumerate(types):
@@ -63,7 +65,7 @@ for i, t in enumerate(types):
         hover_color="gray70",
         command=lambda t=t: (print(f"{t.capitalize()} button clicked!"), typeSelect(t))
     )
-    out_btn.grid(row=i, column=1, padx=50, pady=5, sticky="e")
+    out_btn.grid(row=i, column=1, padx=5, pady=5, sticky="e")
     outcome_buttons.append(out_btn)
 
 # Create the balance mode button
@@ -77,7 +79,20 @@ balance_btn = ctk.CTkButton(
     font=("Helvetica", 14, "bold"),
     command=lambda t=t: (print("Balance mode activated!"), toggleBalanceMode())
 )
-balance_btn.grid(padx=5)
+balance_btn.grid(row=18, column=0, padx=5, pady=5, sticky="w")
+
+# Create the Coverage mode button
+coverage_btn = ctk.CTkButton(
+    app,
+    text="Coverage Mode?",
+    width=30,
+    height=30,
+    fg_color="gray",  # optional: pure image look
+    hover_color="gray70",
+    font=("Helvetica", 14, "bold"),
+    command=lambda t=t: (print("Coverage mode activated!"), toggleCoverageMode())
+)
+coverage_btn.grid(row=18, column=1, padx=5, pady=5, sticky="e")
 
 def toggleBalanceMode():
     balance.toggle_balance()
@@ -85,6 +100,13 @@ def toggleBalanceMode():
         balance_btn.configure(fg_color='gray')
     else:
         balance_btn.configure(fg_color='blue')
+
+def toggleCoverageMode():
+    balance.toggle_coverage()
+    if not balance.coverage:
+        coverage_btn.configure(fg_color='gray')
+    else:
+        coverage_btn.configure(fg_color='blue')
 
 def typeSelect(t):
     index = 0
@@ -106,7 +128,12 @@ def typeSelect(t):
 def updateEffects():
     effectivenesses = np.zeros((1, 18))
     for type in selected:
-        effectivenesses = effectivenesses - balance_matrix[types.index(type)] if balance.balance else effectivenesses - matrix[types.index(type)] 
+        if balance.balance:
+            effectivenesses = effectivenesses - balance_matrix[types.index(type)]
+        elif balance.coverage:
+            effectivenesses = effectivenesses - coverage_matrix[types.index(type)]
+        else:
+            effectivenesses = effectivenesses - matrix[types.index(type)] 
     print(effectivenesses)
     for i in range(0, len(effectivenesses[0])):
         if effectivenesses[0][i] > 4: #defender immune to this types attack
