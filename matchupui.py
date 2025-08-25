@@ -1,6 +1,8 @@
 import customtkinter as ctk
 from PIL import Image
 from type_effectiveness_matrix import generateTypeEffects
+from type_effectiveness_matrix import State
+from type_effectiveness_matrix import generateTypeEffectsBalance
 import numpy as np
 
 ctk.set_appearance_mode("dark")
@@ -8,7 +10,7 @@ ctk.set_default_color_theme("dark-blue")
 
 app = ctk.CTk()
 app.title("Type Buttons")
-app.geometry("350x680")
+app.geometry("350x720")
 
 # List of types
 types = [
@@ -22,9 +24,11 @@ images = []
 buttons = []
 outcome_buttons = []
 selected = []
+balance = State() #specifies whether or not the application is in balance mode
 
-# type matrix
+# type matrixes
 matrix, type_effects = generateTypeEffects()
+balance_matrix, balance_type_effects = generateTypeEffectsBalance()
 
 # instantiate ctk image objects and make the west anchored objects
 for i, t in enumerate(types):
@@ -62,6 +66,26 @@ for i, t in enumerate(types):
     out_btn.grid(row=i, column=1, padx=50, pady=5, sticky="e")
     outcome_buttons.append(out_btn)
 
+# Create the balance mode button
+balance_btn = ctk.CTkButton(
+    app,
+    text="Balance Mode?",
+    width=30,
+    height=30,
+    fg_color="gray",  # optional: pure image look
+    hover_color="gray70",
+    font=("Helvetica", 14, "bold"),
+    command=lambda t=t: (print("Balance mode activated!"), toggleBalanceMode())
+)
+balance_btn.grid(padx=5)
+
+def toggleBalanceMode():
+    balance.toggle_balance()
+    if not balance.balance:
+        balance_btn.configure(fg_color='gray')
+    else:
+        balance_btn.configure(fg_color='blue')
+
 def typeSelect(t):
     index = 0
     for i in range(0, len(types)):
@@ -82,7 +106,7 @@ def typeSelect(t):
 def updateEffects():
     effectivenesses = np.zeros((1, 18))
     for type in selected:
-        effectivenesses = effectivenesses - matrix[types.index(type)]
+        effectivenesses = effectivenesses - balance_matrix[types.index(type)] if balance.balance else effectivenesses - matrix[types.index(type)] 
     print(effectivenesses)
     for i in range(0, len(effectivenesses[0])):
         if effectivenesses[0][i] > 4: #defender immune to this types attack
